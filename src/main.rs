@@ -1,6 +1,7 @@
-use std::
-    fmt::{self}
-;
+use std::{
+    fmt::{self},
+    usize,
+};
 
 #[derive(Default)]
 struct TrieNode {
@@ -31,9 +32,13 @@ impl Trie {
 
     pub fn insert(&mut self, word: &str) {
         let mut current_node = &mut self.root;
-        for char_code in word.chars() {
-            let index = (char_code as usize) - ('a' as usize);
+        for char_code in word.to_lowercase().chars() {
+            // Ignore non-alphabetic characters
+            if !char_code.is_ascii_alphabetic() {
+                continue;
+            }
 
+            let index = (char_code as usize) - ('a' as usize);
             let next_node = &mut current_node.children[index];
             if next_node.is_none() {
                 *next_node = Some(Box::new(TrieNode::new()));
@@ -45,7 +50,11 @@ impl Trie {
 
     pub fn contains(&self, word: &str) -> bool {
         let mut current_node = &self.root;
-        for char_code in word.chars() {
+        for char_code in word.to_lowercase().chars() {
+            // Ignore non-alphabetic characters only a-z
+            if !char_code.is_ascii_alphabetic() {
+                return false;
+            }
             let index = (char_code as usize) - ('a' as usize);
             match &current_node.children[index] {
                 Some(node) => current_node = node,
@@ -78,7 +87,40 @@ fn main() {
 
     // Populate with some English words
     dictionary_trie.insert("apple");
-    dictionary_trie.insert("ape");
+    dictionary_trie.insert("ape'");
     dictionary_trie.insert("ball");
     println!("{:?}", dictionary_trie.root);
+}
+
+// test cases
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_insert_and_contains() {
+        let mut trie = Trie::new();
+        trie.insert("hello");
+        assert!(trie.contains("hello"));
+        assert!(!trie.contains("hell"));
+        trie.insert("hell");
+        assert!(trie.contains("hell"));
+    }
+
+    #[test]
+    fn test_case_insensitivity() {
+        let mut trie = Trie::new();
+        trie.insert("Hello");
+        assert!(trie.contains("hello"));
+        assert!(trie.contains("HELLO"));
+    }
+
+    #[test]
+    fn test_non_alphabetic_characters() {
+        let mut trie = Trie::new();
+        trie.insert("apple!");
+        assert!(trie.contains("apple"));
+        assert!(!trie.contains("apple%"));
+    }
+
 }
