@@ -64,6 +64,40 @@ impl Trie {
         // Return true only if it's marked as the end of a word
         current_node.is_end_of_word
     }
+
+    pub fn words(&self, prefix: &str) -> Vec<String> {
+        let mut words: Vec<String> = Vec::new();
+        // let s = String::from("test");
+        // words.insert(words.len(), s);
+        let mut current_node = &self.root;
+        for char_code in prefix.to_lowercase().chars() {
+            // Ignore non-alphabetic characters
+            if !char_code.is_ascii_alphabetic() {
+                continue;
+            }
+            let index = (char_code as usize) - ('a' as usize);
+            match &current_node.children[index] {
+                Some(node) => current_node = node,
+                None => return words, // Prefix not found, return empty
+            }
+        }
+        // Collect all words starting from the current node
+        self.collect_words(current_node, prefix, &mut words);
+        return words;
+    }
+
+    fn collect_words(&self, node: &TrieNode, prefix: &str, words: &mut Vec<String>) {
+        if node.is_end_of_word {
+            words.push(prefix.to_string());
+        }
+        for (i, child_opt) in node.children.iter().enumerate() {
+            if let Some(child) = child_opt {
+                let char_val = (b'a' + i as u8) as char;
+                let new_prefix = format!("{}{}", prefix, char_val);
+                self.collect_words(child, &new_prefix, words);
+            }
+        }
+    }
 }
 
 // Implement Debug for TrieNode
@@ -90,6 +124,9 @@ fn main() {
     dictionary_trie.insert("ape'");
     dictionary_trie.insert("ball");
     println!("{:?}", dictionary_trie.root);
+    // get words with prefix
+    let words_with_prefix = dictionary_trie.words("ap");
+    println!("Words with prefix 'ap': {:?}", words_with_prefix);
 }
 
 // test cases
@@ -122,5 +159,4 @@ mod tests {
         assert!(trie.contains("apple"));
         assert!(!trie.contains("apple%"));
     }
-
 }
